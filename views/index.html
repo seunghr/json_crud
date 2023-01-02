@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <input type="text" id="userid" name="userid" placeholder="userid">
+        <input type="text" id="username" name="username" placeholder="username">
+        <input type="text" id="useremail" name="useremail" placeholder="useremail">
+        <input type="text" id="userphone" name="userphone" placeholder="userphone">
+    </div>
+    <div class="btn-container">
+        <button class="list">목록보기</button>
+        <button class="filter">검색목록확인</button>
+        <button class="create">가입하기</button>
+        <button class="update">수정</button>
+        <button class="delete">삭제</button>
+    </div>
+    <div class="message">
+        <table>
+           
+        </table>
+    </div>
+    <script>
+        // window.blurHandle() : 메모리를 소비하므로 필요할 때 생성해서 쓰고 필요 없으면 삭제 
+        const  blurHandle = ()=>{
+            userid.value = '';
+            username.value = '';
+            useremail.value = '';
+            userphone.value = '';
+        }
+
+       async function lists(){
+            try{
+                const response = await fetch('http://localhost:3000/list');
+                const users = await response.json();
+                console.log(users);
+
+                let tableFunction ='';
+                users.forEach( res=>{
+                    tableFunction += `
+                        <tr>
+                            <td>${res.id}</td>
+                            <td>${res.userid}</td>
+                            <td>${res.username}</td>
+                            <td>${res.useremail}</td>
+                            <td>${res.userphone}</td>
+                        </tr>
+                    `;
+                })
+                document.querySelector('.message>table').innerHTML = tableFunction; 
+            }catch(err){
+                console.log(err);
+            }
+        }
+
+       lists();
+   
+
+        const list = document.querySelector('.list');
+        list.addEventListener('click', ()=>{
+            lists();
+        })
+
+        const filter = document.querySelector('.filter');
+        filter.addEventListener('click', async ()=>{ 
+            let userid = document.querySelector('#userid').value;
+            console.log( userid );
+            const filterUrl = `http://localhost:3000/filter/${userid}` 
+            filterLists( filterUrl );
+        })
+ 
+        async function filterLists(url){
+           try{
+                const response = await fetch(url);
+                const user = await response.json(); 
+                console.log(user);
+                blurHandle();
+                if( user.success ){
+                    let tableFunction = `
+                        <tr>
+                            <td>${user.data.id}</td>
+                            <td>${user.data.userid}</td>
+                            <td>${user.data.username}</td>
+                            <td>${user.data.useremail}</td>
+                            <td>${user.data.userphone}</td>
+                        </tr>
+                    `;
+                    document.querySelector('.message>table').innerHTML = tableFunction; 
+                }else{ 
+                    alert( user.message );
+                    // new Error( user.message );
+                    // throw err;
+                }        
+           }catch(err){
+                console.log( err.message )
+           }
+          
+        }
+    
+        // delete 배열, 변수, 객체속성 : 삭제
+        const deleteBtn = document.querySelector('.delete');
+        deleteBtn.addEventListener('click', async ()=>{
+            try{ 
+                let userid = document.querySelector('#userid').value;
+                const deleteUrl = 'http://localhost:3000/delete'
+                const response = await fetch( deleteUrl, 
+                                    { 
+                                        method:'POST',
+                                        body: JSON.stringify({   userid }),
+                                        headers: {
+                                            'Content-type': 'application/json; charset=UTF-8',
+                                        },
+                                    })
+                const user = await response.json() ;
+                console.log( user );
+                alert( user.message ) ;
+                blurHandle();
+                lists(); 
+            }catch(err){
+                console.log(err);
+            }
+        })
+    
+        const create = document.querySelector('.create');
+        create.addEventListener('click', async ()=>{
+           try{
+            const createUrl = `http://localhost:3000/create`;
+  
+            const response = await fetch( createUrl, 
+            { 
+                method:'POST',
+                body: JSON.stringify({
+                    userid :  userid.value ,
+                    username : username.value,
+                    useremail : useremail.value, 
+                    userphone : userphone.value
+                }),
+                headers: {
+                    'Content-type': 'application/json; charset=UTF-8',
+                },
+            })
+            const users = await response.json();
+            console.log( users.success, users.message, users.data );
+            blurHandle();
+            lists();
+
+            if( users.success ) alert('생성되었습니다.');                
+            else  alert('데이터를 확인하세요.');
+            
+           }catch(err){
+                console.log(err);
+           }
+        })
+    
+        const update = document.querySelector('.update');
+        update.addEventListener('click', async ()=>{ 
+            try{
+                const response = await fetch('http://localhost:3000/update', 
+                    { 
+                        method:'POST',
+                        body: JSON.stringify({
+                            userid :  userid.value ,
+                            username : username.value,
+                            useremail : useremail.value, 
+                            userphone : userphone.value
+                        }),
+                        headers: {
+                            'Content-type': 'application/json; charset=UTF-8',
+                        },
+                    })
+                    const user = await response.json();
+                    
+                    console.log(user);
+                    blurHandle();
+                    lists();
+                    alert( user.message );
+                
+            }catch(err){
+                console.log(err);
+            }
+        })
+    </script>
+</body>
+</html>
